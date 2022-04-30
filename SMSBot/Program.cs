@@ -23,8 +23,8 @@ namespace SMSBot
             twilioToken = config.twilioToken;
 
             var discConfig = new DiscordSocketConfig();
-            config.GatewayIntents |= GatewayIntents.GuildMembers;
-            config.GatewayIntents |= GatewayIntents.GuildPresences;
+            discConfig.GatewayIntents |= GatewayIntents.GuildMembers;
+            discConfig.GatewayIntents |= GatewayIntents.GuildPresences;
             _client = new DiscordSocketClient(discConfig);
         }
 
@@ -32,7 +32,6 @@ namespace SMSBot
 
         public async Task MainAsync()
         {
-
             _client.Log += Log;
 
             // Some alternative options would be to keep your token in an Environment Variable or a standalone file.
@@ -58,8 +57,7 @@ namespace SMSBot
 
         private async Task UserJoined(SocketGuildUser user)
         {
-            Console.WriteLine(nameof(UserJoined));
-            await user.AddRoleAsync(968304559673970768);
+            await user.AddRoleAsync(970012640338399242);
         }
 
         private async Task MessageRecieved(SocketMessage message)
