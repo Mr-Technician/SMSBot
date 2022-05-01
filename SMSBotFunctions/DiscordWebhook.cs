@@ -37,7 +37,7 @@ namespace SMSBotFunctions
                 && MessagingServiceSid == Environment.GetEnvironmentVariable("TwilioMessagingServiceSid")
                 && ValidNumbers.Contains(From)))
             {
-                Console.WriteLine("Validation failed");
+                log.LogInformation("Validation failed");
                 return new OkObjectResult(null); //if any of the above do not match do nothing but return Ok so Twilio doesn't complain
             }
 
