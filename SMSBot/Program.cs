@@ -14,6 +14,12 @@ namespace SMSBot
         private readonly string twilioSid;
         private readonly string twilioToken;
 
+        /// <summary>
+        /// The id of the channel messages will be sent from
+        /// </summary>
+        private const long channelID = 969974768629592164;
+        private const long roleID = 970012640338399242;
+
         public Program()
         {
             var file = File.ReadAllText("public.json");
@@ -57,7 +63,7 @@ namespace SMSBot
 
         private async Task UserJoined(SocketGuildUser user)
         {
-            await user.AddRoleAsync(970012640338399242);
+            await user.AddRoleAsync(roleID);
         }
 
         private async Task MessageRecieved(SocketMessage message)
@@ -69,7 +75,7 @@ namespace SMSBot
             if (message.Channel.Id == 967216810120347711)
                 Console.WriteLine(message);
 
-            if (message.Channel.Id == 967553697456467998 && !message.Author.IsBot && !message.Author.IsWebhook)
+            if (message.Channel.Id == channelID && !message.Author.IsBot && !message.Author.IsWebhook)
             {
                 TwilioClient.Init(twilioSid, twilioToken);
 
