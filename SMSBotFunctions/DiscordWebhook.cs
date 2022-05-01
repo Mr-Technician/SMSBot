@@ -21,9 +21,6 @@ namespace SMSBotFunctions
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
             ILogger log)
         {
-            var WebHookId = Environment.GetEnvironmentVariable("WebhookID");
-            var WebHookToken = Environment.GetEnvironmentVariable("WebhookToken");
-
             log.LogInformation("SMS Recieved");
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
@@ -36,11 +33,11 @@ namespace SMSBotFunctions
             var From = query["From"];
             var ValidNumbers = Environment.GetEnvironmentVariable("ValidPhoneNumbers").Split(',');
 
-            if(!(AccountSid == Environment.GetEnvironmentVariable("TwilioAccountSid") 
+            if (!(AccountSid == Environment.GetEnvironmentVariable("TwilioAccountSid")
                 && MessagingServiceSid == Environment.GetEnvironmentVariable("TwilioMessagingServiceSid")
                 && ValidNumbers.Contains(From)))
             {
-                return new OkObjectResult(null); ; //if any of the above do not match do nothing but return Ok so Twilio doesn't complain
+                return new OkObjectResult(null); //if any of the above do not match do nothing but return Ok so Twilio doesn't complain
             }
 
             var name = Environment.GetEnvironmentVariable(From);
@@ -52,7 +49,7 @@ namespace SMSBotFunctions
             };
 
             using var client = new HttpClient();
-            string endpoint = string.Format("https://discordapp.com/api/webhooks/{0}/{1}", WebHookId, WebHookToken);
+            string endpoint = string.Format("https://discordapp.com/api/webhooks/{0}", Environment.GetEnvironmentVariable(query["From"]));
             var content = new StringContent(JsonConvert.SerializeObject(SuccessWebHook), Encoding.UTF8, "application/json");
             await client.PostAsync(endpoint, content);
 
