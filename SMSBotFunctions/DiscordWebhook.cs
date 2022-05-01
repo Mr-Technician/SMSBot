@@ -41,18 +41,17 @@ namespace SMSBotFunctions
                 return new OkObjectResult(null); //if any of the above do not match do nothing but return Ok so Twilio doesn't complain
             }
 
-            var name = Environment.GetEnvironmentVariable(From);
-
             var SuccessWebHook = new
             {
-                username = name,
                 content = query["Body"]
             };
 
             using var client = new HttpClient();
-            string endpoint = string.Format("https://discordapp.com/api/webhooks/{0}", Environment.GetEnvironmentVariable(query["From"]));
+            string endpoint = string.Format("https://discordapp.com/api/webhooks/{0}", Environment.GetEnvironmentVariable(From));
             var content = new StringContent(JsonConvert.SerializeObject(SuccessWebHook), Encoding.UTF8, "application/json");
             await client.PostAsync(endpoint, content);
+
+            log.LogInformation(string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(From)).ToString());
 
             return new OkObjectResult(null);
         }
