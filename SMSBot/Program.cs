@@ -9,29 +9,19 @@ namespace SMSBot
 {
     public class Program
     {
-        private DiscordSocketClient _client;
-        private readonly string discordToken;
-        private readonly string twilioSid;
-        private readonly string twilioToken;
-
-        /// <summary>
-        /// The id of the channel messages will be sent from
-        /// </summary>
-        private const long channelID = 969974768629592164;
-        private const long roleID = 970012640338399242;
+        private readonly DiscordSocketClient _client;
+        private readonly BotConfig _config;
 
         public Program()
         {
-            var file = File.ReadAllText("public.json");
-            var config = JsonConvert.DeserializeObject<dynamic>(file);
-            discordToken = config.discordToken;
-            twilioSid = config.twilioSid;
-            twilioToken = config.twilioToken;
+            _config = BotConfig.Initialize("public.json");
 
             var discConfig = new DiscordSocketConfig();
             discConfig.GatewayIntents |= GatewayIntents.GuildMembers;
             discConfig.GatewayIntents |= GatewayIntents.GuildPresences;
             _client = new DiscordSocketClient(discConfig);
+
+            TwilioClient.Init(_config.TwilioSid, _config.TwilioToken); //create twilio client
         }
 
         public static Task Main(string[] args) => new Program().MainAsync();
@@ -40,12 +30,7 @@ namespace SMSBot
         {
             _client.Log += Log;
 
-            // Some alternative options would be to keep your token in an Environment Variable or a standalone file.
-            // var token = Environment.GetEnvironmentVariable("NameOfYourEnvironmentVariable");
-            // var token = File.ReadAllText("token.txt");
-            // var token = JsonConvert.DeserializeObject<AConfigurationClass>(File.ReadAllText("config.json")).Token;
-
-            await _client.LoginAsync(TokenType.Bot, discordToken);
+            await _client.LoginAsync(TokenType.Bot, _config.DiscordToken);
             await _client.StartAsync();
 
             _client.MessageUpdated += MessageUpdated;
@@ -63,27 +48,27 @@ namespace SMSBot
 
         private async Task UserJoined(SocketGuildUser user)
         {
-            await user.AddRoleAsync(roleID);
+            await user.AddRoleAsync(_config.JoinRoleId);
         }
 
         private async Task MessageRecieved(SocketMessage message)
         {
-            IGuild guild = _client.GetGuild(967216808845262878);
-            IGuildUser user = await guild.GetUserAsync(248895007849709569);
-            Console.WriteLine(user.Status);
-
-            if (message.Channel.Id == 967216810120347711)
-                Console.WriteLine(message);
-
-            if (message.Channel.Id == channelID && !message.Author.IsBot && !message.Author.IsWebhook)
+            if (message.Channel.Id == _config.SMSChannelId && (!message.Author.IsBot || message.Author.IsWebhook)) //if this is general chat, not a bot, (unless webhook)
             {
-                TwilioClient.Init(twilioSid, twilioToken);
+                IGuild guild = _client.GetGuild(_config.GuildId); //get the currint guild
+                foreach (var smsLink in _config.SMSLinks.Where(x => x.Enabled)) //loop through enabled links
+                {
+                    if (message.Author.Id == smsLink.DiscordWebhookID) break; //don't send message if the recipient is the same webhook
 
-                await MessageResource.CreateAsync(
-                body: ((message.Author as SocketGuildUser).Nickname ?? message.Author.Username) + ":\n" + message.CleanContent,
-                from: new Twilio.Types.PhoneNumber("+18649713170"),
-                to: new Twilio.Types.PhoneNumber("+16513033247")
-            );
+                    IGuildUser user = await guild.GetUserAsync(smsLink.DiscordID); //get the send user
+                    if (user.Status == UserStatus.Online) break; //don't send message if the user is online
+
+                    await MessageResource.CreateAsync( //send the message
+                    body: ((message.Author as SocketGuildUser).Nickname ?? message.Author.Username) + ":\n" + message.CleanContent,
+                    from: new Twilio.Types.PhoneNumber(_config.TwilioNumber),
+                    to: new Twilio.Types.PhoneNumber(smsLink.Number)
+                    );
+                }
             }
         }
 
